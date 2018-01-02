@@ -3,15 +3,18 @@ MAINTAINER eric@ds-do.com
 
 RUN export DEBIAN_FRONTEND=noninteractive && \
 	apt-get update && apt install -qy \
-	gosu \
-	libpam-ldap \
+    auth-client-config \
+    gosu \
 	ldap-utils \
-	libsasl2-dev \
 	libldap2-dev \
+    libnss-sss \
+    libpam-sss \
+	libsasl2-dev \
 	libssl-dev \
-	nscd \
 	python-ldap \
 	python-pip \
+    sssd \
+    sssd-tools \
 	sudo \
  && rm -rf /var/lib/apt/lists/*
 
@@ -21,12 +24,17 @@ RUN pip install ssh-ldap-pubkey
 
 RUN echo "AuthorizedKeysCommand /usr/local/bin/ssh-ldap-pubkey-wrapper\\nAuthorizedKeysCommandUser nobody" >> /etc/ssh/sshd_config
 
-RUN echo "base dc=ds-do,dc=com\\nuri ldap://gw.internal.k8s.ds-do.com:30389\\nldap_version 3\\nbinddn cn=readonly,dc=ds-do,dc=com\\nbindpw readonly321\\nrootbinddn cn=admin,dc=dsp\\npam_password md5" > /etc/ldap.conf
-RUN sed -i.bak 's/^\(\(passwd\|group\|shadow\):.*compat\)/\1 ldap/' /etc/nsswitch.conf
-RUN sed -i.bak 's/pam_ldap.so use_authtok try_first_pass/pam_ldap.so try_first_pass/' /etc/pam.d/common-password
-RUN echo "account required    pam_access.so" >> /etc/pam.d/common-auth
+#RUN echo "account required    pam_access.so" >> /etc/pam.d/common-auth
 
-RUN sed -i.bak 's/^#\(PasswordAuthentication yes\)/\1/' /etc/ssh/sshd_config
+#RUN sed -i.bak 's/^#\(PasswordAuthentication yes\)/\1/' /etc/ssh/sshd_config
+
+COPY profile.d-sss /etc/auth-client-config/profile.d/sss
+
+COPY ldap.conf /etc/ldap.conf
+
+COPY sssd.conf /etc/sssd/sssd.conf
+
+RUN chown -R root:root /etc/sssd && chmod 600 /etc/sssd/sssd.conf
 
 RUN mkdir /data
 
