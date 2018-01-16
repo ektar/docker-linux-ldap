@@ -1,4 +1,4 @@
-from ektar/linux-base:v1.0.2
+from ektar/linux-base:v1.0.3
 MAINTAINER eric@ds-do.com
 
 RUN export DEBIAN_FRONTEND=noninteractive && \
